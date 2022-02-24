@@ -69,4 +69,12 @@ void uart0_puts(char* _str);
 // ----------------------------------------------------------------------------
 void uart0_registerReceptionCallback(void (*pCallback)(uint8_t data));
 
+// ----------------------------------------------------------------------------
+// descr.   copies arg into sendBuffer and
+//          calls sei(); to globally enable interrupts.
+// param.   string to be sent
+// return   -
+// ----------------------------------------------------------------------------
+void uart0_puts_nb(const char* pText);
+
 #endif /* UART0_H_ */

@@ -1,8 +1,10 @@
 #include "uart0.h" // is located in same directory, therefore "*.h"
 #include <avr/interrupt.h>
+#include <string.h>
 
 void (*pRecepionCallback)(uint8_t data) = NULL; // null indicated that no callback function has been registered yet
-
+char sendBuffer[32] = ""; // felder san imma volatile
+volatile uint8_t sendBufferIndex = 0;
 
 void uart0_init(uint32_t baudrate, enum UartMode mode, enum UartParity parity)
 {
@@ -85,10 +87,35 @@ void uart0_registerReceptionCallback(void (*pCallback)(uint8_t data))
 }
 
 
+void uart0_puts_nb(const char* pText)
+{
+	strcat(sendBuffer, pText);
+	sei();
+	
+	if(sendBuffer[sendBufferIndex] != '\0')
+	{
+		UCSR0B |= (1 << UDRIE0); // enable data-register-empty-interrupt
+	}
+}
+
+
 ISR(USART0_RX_vect)
 {
     if(pRecepionCallback)
     {
         (*pRecepionCallback)(UDR0);
     }
+}
+
+
+ISR(USART0_UDRE_vect)
+{
+	UDR0 = sendBuffer[sendBufferIndex++];
+	
+	if(sendBuffer[sendBufferIndex] == '\0')
+	{
+		sendBufferIndex = 0;
+		UCSR0B &= ~(1 << UDRIE0); // disable data-register-empty-interrupt
+		sendBuffer[0] = '\0'; // clear string
+	}
 }
